@@ -34,6 +34,7 @@ class Paginator:
             ctx: ComponentContext,
             contents: Optional[List[str]] = None,
             embeds: Optional[List[discord.Embed]] = None,
+            header: str = '',
             timeout: int = 30,
             use_extend: bool = False,
             only: Optional[discord.User] = None,
@@ -47,6 +48,7 @@ class Paginator:
         self.context = ctx
         self.contents = contents
         self.embeds = embeds
+        self.header = header
         self.timeout = timeout
         self.use_extend = use_extend
         self.only = only
