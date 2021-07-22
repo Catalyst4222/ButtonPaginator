@@ -42,7 +42,7 @@ class Paginator:
             extended_buttons: Optional[EmojiType] = None,
             left_button_style: Union[int, ButtonStyle] = ButtonStyle.green,
             right_button_style: Union[int, ButtonStyle] = ButtonStyle.green,
-            auto_delete: bool = False,
+            delete_after_timeout: bool = False,
     ) -> None:
         self.bot = bot
         self.context = ctx
@@ -56,7 +56,7 @@ class Paginator:
         self.extended_buttons = extended_buttons or ["⏪", "⏩"]
         self.left_button_style: int = left_button_style
         self.right_button_style: int = right_button_style
-        self.auto_delete = auto_delete
+        self.delete_after_timeout = delete_after_timeout
         self.page = 1
         self._left_button = self.basic_buttons[0]
         self._right_button = self.basic_buttons[1]
@@ -222,25 +222,8 @@ class Paginator:
                 await self.handle_paginaion(res)
 
             except asyncio.TimeoutError:
-                pass
-
-    async def handle_paginaion(self, ctx: ComponentContext):  # reworked to use slash custom_id
-        if self.use_extend:
-            if ctx.custom_id == "_extend_left_click":
-                await self.go_first(ctx)
-            elif ctx.custom_id == "_left_click":
-                await self.go_previous(ctx)
-                await self.context.send(self.only.id)
-            elif ctx.custom_id == "_right_click":
-                await self.go_next(ctx)
-                await self.context.send(self.only.id)
-            elif ctx.custom_id == "_extend_right_click":
-                await self.go_last(ctx)
-        else:
-            if ctx.custom_id == "_left_click":
-                await self.go_previous(ctx)
-            elif ctx.custom_id == "_right_click":
-                await self.go_next(ctx)
+                if self.delete_after_timeout:
+                    return await self._message.delete()
 
     async def disable_check(self) -> Tuple[bool, bool]:  # Looks good, sike, fails with content
         if self.page == 1 and (len(self.embeds or self.contents)) == 1:
