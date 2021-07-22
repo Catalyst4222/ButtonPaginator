@@ -1,17 +1,9 @@
 import discord
-# from discord import InvalidArgument
 import discord_slash.model
 from discord.ext import commands
 
 import asyncio
-from typing import List, Optional, Union, Tuple
-
-# from discord_components import (
-#     Button,
-#     ButtonStyle,
-#     InteractionType,
-# )
-# from discord_components import Interaction
+from typing import List, Optional, Union
 
 from discord_slash.model import ButtonStyle
 from discord_slash.context import ComponentContext
@@ -31,7 +23,7 @@ class Paginator:
                 commands.Bot,
                 commands.AutoShardedBot,
             ],
-            ctx: ComponentContext,
+            ctx: Union[commands.Context, discord_slash.SlashContext],
             contents: Optional[List[str]] = None,
             embeds: Optional[List[discord.Embed]] = None,
             header: str = '',
@@ -44,6 +36,23 @@ class Paginator:
             right_button_style: Union[int, ButtonStyle] = ButtonStyle.green,
             delete_after_timeout: bool = False,
     ) -> None:
+        """
+
+        :param bot: The client or bot used to start the paginator.
+        Must also have the :class:`discord_slash.SlashCommand` hooks applied
+        :param ctx: The context used to invoke the command
+        :param contents: The list of messages to go on each page
+        :param embeds: The list of embeds to go on each page
+        :param header: A message to display at the top of each page
+        :param timeout: The amount of time to wait before the check fails
+        :param use_extend: Whether to add buttons to go to the first and last page
+        :param only: The only :class:`~discord.User` who can use the paginator
+        :param basic_buttons: A list of two valid button emojis for the left and right buttons
+        :param extended_buttons: A list of two valid button emojis for the first and last buttons
+        :param left_button_style: The style to use for the left button
+        :param right_button_style: The style to use for the left button
+        :param delete_after_timeout: Whether to delete the message after the first sent timeout
+        """
         self.bot = bot
         self.context = ctx
         self.contents = contents
@@ -104,94 +113,9 @@ class Paginator:
                 "Can't use <discord_component.ButtonStyle.URL> type for button style."
             )
 
-    async def go_previous(self, ctx: ComponentContext) -> None:
-        if self.page == 1:
-            return
-        self.page -= 1
-        if self.contents is None:
-            await ctx.edit_origin(embed=self.embeds[self.page - 1],
-                                  components=(await self.make_buttons()))
-            # await payload.respond(
-            #     type=InteractionType.UpdateMessage,
-            #     embed=self.embeds[self.page - 1],
-            #     components=(await self.make_buttons()),
-            # )
-        else:
-            await ctx.edit_origin(content=self.contents[self.page - 1],
-                                  components=(await self.make_buttons()))
-            # await payload.respond(
-            #     type=InteractionType.UpdateMessage,
-            #     content=self.contents[self.page - 1],
-            #     components=(await self.make_buttons()),
-            # )
-
-    async def go_next(self, ctx: ComponentContext) -> None:
-        if self.embeds is not None:
-            if self.page != len(self.embeds):
-                self.page += 1
-                await ctx.edit_origin(embed=self.embeds[self.page - 1],
-                                      components=(await self.make_buttons()))
-                # await payload.respond(
-                #     type=InteractionType.UpdateMessage,
-                #     embed=self.embeds[self.page - 1],
-                #     components=(await self.make_buttons()),
-                # )
-            elif self.contents is not None:
-                if self.page != len(self.contents):
-                    self.page += 1
-                    await ctx.edit_origin(content=self.contents[self.page - 1],
-                                          components=(await self.make_buttons()))
-                    # await payload.respond(
-                    #     type=InteractionType.UpdateMessage,
-                    #     content=self.contents[self.page - 1],
-                    #     components=(await self.make_buttons()),
-                    # )
-
-    async def go_first(self, ctx: ComponentContext) -> None:
-        if self.page == 1:
-            return
-        self.page = 1
-
-        if self.contents is None:
-            await ctx.edit_origin(content=self.embeds[self.page - 1],
-                                  components=(await self.make_buttons()))
-            # await payload.respond(
-            #     type=InteractionType.UpdateMessage,
-            #     embed=self.embeds[self.page - 1],
-            #     components=(await self.make_buttons()),
-            # )
-        else:
-            await ctx.edit_origin(content=self.contents[self.page - 1],
-                                  components=(await self.make_buttons()))
-            # await payload.respond(
-            #     type=InteractionType.UpdateMessage,
-            #     content=self.contents[self.page - 1],
-            #     components=(await self.make_buttons()),
-            # )
-
-    async def go_last(self, ctx: ComponentContext) -> None:
-        if self.embeds is not None:
-            if self.page != len(self.embeds):
-                self.page = len(self.embeds)
-                await ctx.edit_origin(content=self.contents[self.page - 1],
-                                      components=(await self.make_buttons()))
-                # await payload.respond(
-                #     type=InteractionType.UpdateMessage,
-                #     embed=self.embeds[self.page - 1],
-                #     components=(await self.make_buttons()),
-                # )
-        elif self.contents is not None:
-            if self.page != len(self.contents):
-                self.page = len(self.contents)
-                await ctx.edit_origin(content=self.contents[self.page - 1],
-                                      components=(await self.make_buttons()))
-                # await payload.respond(
-                #     type=InteractionType.UpdateMessage,
-                #     content=self.contents[self.page - 1],
-                #     components=(await self.make_buttons()),
-                # )
-
     def button_check(self, ctx: ComponentContext) -> bool:
+        """Return False if the message received isn't the proper message,
+        or if `self.only` is True and the user isn't the command author"""
         if ctx.origin_message_id != self._message.id:
             return False
 
@@ -205,103 +129,71 @@ class Paginator:
         return True
 
     async def start(self) -> None:
+        """Start the paginator.
+        This method will only return if a timeout occurs and `delete_after_timeout` was set to True"""
         self._message = await self.context.send(
             content=(self.header + '\n' + self.contents[self.page - 1]) or None,
             embed=self.embeds[self.page - 1],
             components=(await self._make_buttons()))
         while True:
             try:
-                _task = asyncio.ensure_future(wait_for_component(self.bot, check=self.button_check,
-                                                                 messages=self._message
-                                                                 ))
-                done, pending = await asyncio.wait(
-                    [_task], return_when=asyncio.FIRST_COMPLETED, timeout=self.timeout
-                )
-                for i in pending:
-                    i.cancel()
+                ctx = await wait_for_component(self.bot, check=self.button_check, messages=self._message)
 
-                if len(done) == 0:
-                    raise asyncio.TimeoutError
+                if ctx.custom_id == "_extend_left_click":
+                    self.page = 1
+                elif ctx.custom_id == "_left_click":
+                    self.page = (self.page - 1 or 1)  # Don't go back too far
+                elif ctx.custom_id == "_right_click":
+                    self.page += (self.page != len(self.embeds))  # Adding bools ~= adding numbers
+                elif ctx.custom_id == "_extend_right_click":
+                    self.page = len(self.embeds)
 
-                res = done.pop().result()
-                await self.handle_paginaion(res)
+                await ctx.edit_origin(content=(self.header + '\n' + self.contents[self.page - 1]) or None,
+                                      embed=self.embeds[self.page - 1],
+                                      components=(await self._make_buttons()))
 
             except asyncio.TimeoutError:
                 if self.delete_after_timeout:
                     return await self._message.delete()
 
-    async def disable_check(self) -> Tuple[bool, bool]:  # Looks good, sike, fails with content
-        if self.page == 1 and (len(self.embeds or self.contents)) == 1:
-            right_disable = True
-            left_disable = True
-        elif self.page == 1 and not (len(self.embeds or self.contents)) == 1:
-            right_disable = False
-            left_disable = True
-        elif self.page == (len(self.embeds or self.contents)):
-            right_disable = True
-            left_disable = False
-        else:
-            right_disable = False
-            left_disable = False
+    async def _make_buttons(self) -> list:
+        """Create the actionrow used to manage the Paginator"""
+        left_disable = self.page == 1
+        right_disable = self.page == (len(self.embeds or self.contents))
 
-        return right_disable, left_disable
+        buttons = [
+            create_button(
+                style=self.left_button_style,
+                label=self._left_button,
+                custom_id="_left_click",
+                disabled=left_disable,
+            ),
+            create_button(
+                style=ButtonStyle.gray,
+                label=f"Page {str(self.page)} / {str(len(self.embeds or self.contents))}",
+                custom_id="_show_page",
+                disabled=True,
+            ),
+            create_button(
+                style=self.right_button_style,
+                label=self._right_button,
+                custom_id="_right_click",
+                disabled=right_disable,
+            ),
+        ]
 
-    async def make_buttons(self) -> list:  # Reworked
-        """Creates the actionrows and buttons"""
-        right_disable, left_disable = await self.disable_check()
         if self.use_extend:
-            buttons = [create_actionrow(
-                create_button(
+            buttons.insert(0, create_button(
                     style=self.left_button_style,
                     label=self._left2_button,
                     custom_id="_extend_left_click",
                     disabled=left_disable,
-                ),
-                create_button(
-                    style=self.left_button_style,
-                    label=self._left_button,
-                    custom_id="_left_click",
-                    disabled=left_disable,
-                ),
-                create_button(
-                    style=ButtonStyle.gray,
-                    label=f"Page {str(self.page)} / {str(len(self.embeds))}",
-                    custom_id="_show_page",
-                    disabled=True,
-                ),
-                create_button(
-                    style=self.right_button_style,
-                    label=self._right_button,
-                    custom_id="_right_click",
-                    disabled=right_disable,
-                ),
-                create_button(
-                    style=self.right_button_style,
-                    label=self._right2_button,
-                    custom_id="_extend_right_click",
-                    disabled=right_disable,
-                ),
-            )]
-        else:
-            buttons = [create_actionrow(
-                create_button(
-                    style=self.left_button_style,
-                    label=self._left_button,
-                    custom_id="_left_click",
-                    disabled=left_disable,
-                ),
-                create_button(
-                    style=ButtonStyle.gray,
-                    label=f"Page {str(self.page)} / {str(len(self.embeds or self.contents))}",
-                    custom_id="_show_page",
-                    disabled=True,
-                ),
-                create_button(
-                    style=self.right_button_style,
-                    label=self._right_button,
-                    custom_id="_right_click",
-                    disabled=right_disable,
-                ),
-            )]
+                ))
+            buttons.append(create_button(
+                style=self.right_button_style,
+                label=self._right2_button,
+                custom_id="_extend_right_click",
+                disabled=right_disable,
+            ))
 
-        return buttons
+        return [create_actionrow(*buttons)]
