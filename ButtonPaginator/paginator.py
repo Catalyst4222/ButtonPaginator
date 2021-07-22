@@ -74,6 +74,18 @@ class Paginator:
         if contents is None and embeds is None:
             raise MissingAttributeException("Both contents and embeds are None.")
 
+        # force contents and embeds to be equal lengths
+        if contents is not None and embeds is not None:
+            if len(contents) != len(embeds):
+                raise InvaildArgumentException(
+                    "contents and embeds must be the same length if both are specified"
+                )
+        else:
+            if contents is not None:
+                self.embeds = [None]*len(contents)
+            elif embeds is not None:
+                self.contents = ['']*len(embeds)
+
         if not isinstance(timeout, int):
             raise TypeError("timeout must be int.")
 
@@ -194,16 +206,10 @@ class Paginator:
         return True
 
     async def start(self) -> None:
-        if self.contents is None:
-            self._message = await self.context.send(
-                embed=self.embeds[self.page - 1],
-                components=(await self.make_buttons()),
-            )
-        else:
-            self._message = await self.context.send(
-                content=self.contents[self.page - 1],
-                components=(await self.make_buttons()),
-            )
+        self._message = await self.context.send(
+            content=(self.header + '\n' + self.contents[self.page - 1]) or None,
+            embed=self.embeds[self.page - 1],
+            components=(await self._make_buttons()))
         while True:
             try:
                 _task = asyncio.ensure_future(wait_for_component(self.bot, check=self.button_check,
