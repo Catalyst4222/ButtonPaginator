@@ -192,17 +192,16 @@ class Paginator:
                 # )
 
     def button_check(self, ctx: ComponentContext) -> bool:
-        if ctx.author_id == self.bot.user.id:
+        if ctx.origin_message_id != self._message.id:
             return False
-        # if ctx.origin_message_id != self.context.message.id: # TODO
-        #     return False
-        print(str(self.only.__repr__()))
+
         if self.only is not None:
             if ctx.author_id != self.only.id:
+                asyncio.get_running_loop().create_task(ctx.send(
+                    f'{ctx.author.mention}, you\'re not the author!', hidden=True)
+                )
                 return False
 
-        # if not self.component.id.endswith("_click"):
-        #     return False
         return True
 
     async def start(self) -> None:
