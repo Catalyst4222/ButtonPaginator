@@ -10,7 +10,7 @@ from discord_slash.utils.manage_components import (create_actionrow,
                                                    create_button,
                                                    wait_for_component)
 
-from .errors import InvaildArgumentException, MissingAttributeException
+from .errors import InvalidArgumentException, MissingAttributeException
 
 EmojiType = List[
     Union[discord.Emoji, discord.Reaction, discord.PartialEmoji, str]
@@ -103,7 +103,7 @@ class Paginator:
         # force contents and embeds to be equal lengths
         if contents is not None and embeds is not None:
             if len(contents) != len(embeds):
-                raise InvaildArgumentException(
+                raise InvalidArgumentException(
                     "contents and embeds must be the same length if both are specified"
                 )
         else:
@@ -116,12 +116,12 @@ class Paginator:
             raise TypeError("timeout must be int.")
 
         if len(self.basic_buttons) != 2:
-            raise InvaildArgumentException(
+            raise InvalidArgumentException(
                 "There should be 2 elements in basic_buttons."
             )
         if extended_buttons is not None:
             if len(self.extended_buttons) != 2:
-                raise InvaildArgumentException(
+                raise InvalidArgumentException(
                     "There should be 2 elements in extended_buttons"
                 )
 

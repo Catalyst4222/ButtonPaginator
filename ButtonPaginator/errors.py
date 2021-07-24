@@ -2,5 +2,5 @@ class MissingAttributeException(Exception):
     pass
 
 
-class InvaildArgumentException(Exception):
+class InvalidArgumentException(Exception):
     pass
