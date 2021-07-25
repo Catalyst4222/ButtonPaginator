@@ -179,7 +179,6 @@ class Paginator:
                 lambda x: isinstance(x, discord.role.Role), self.only
             ):
                 check = check or role in ctx.author.roles
-                check = any(x in ctx.author.roles for x in self.only)
 
             if not check:
                 asyncio.get_running_loop().create_task(
