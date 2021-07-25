@@ -6,9 +6,11 @@ import discord_slash.model
 from discord.ext import commands
 from discord_slash.context import ComponentContext
 from discord_slash.model import ButtonStyle
-from discord_slash.utils.manage_components import (create_actionrow,
-                                                   create_button,
-                                                   wait_for_component)
+from discord_slash.utils.manage_components import (
+    create_actionrow,
+    create_button,
+    wait_for_component,
+)
 
 from .errors import InvalidArgumentException, MissingAttributeException
 
@@ -32,7 +34,13 @@ class Paginator:
         start_page: int = 1,
         header: str = "",
         use_extend: bool = False,
-        only: Optional[discord.User] = None,
+        only: Optional[
+            Union[
+                discord.User,
+                discord.Role,
+                List[Union[discord.User, discord.Role]],
+            ]
+        ] = None,
         basic_buttons: Optional[EmojiType] = None,
         extended_buttons: Optional[EmojiType] = None,
         left_button_style: Union[int, ButtonStyle] = ButtonStyle.green,
@@ -91,8 +99,9 @@ class Paginator:
             ),
         ):
             raise TypeError(
-                "This is not a discord.py related bot class.(only <discord.Client, <discord.AutoShardedClient>, "
-                "<discord.ext.commands.Bot>, <discord.ext.commands.AutoShardedBot>) "
+                "This is not a discord.py related bot class. Must be one of:"
+                " discord.Client, discord.AutoShardedClient, "
+                "discord.ext.commands.Bot, discord.ext.commands.AutoShardedBot"
             )
 
         if contents is None and embeds is None:
@@ -100,11 +109,28 @@ class Paginator:
                 "Both contents and embeds are None."
             )
 
+        if self.only:
+            # Simplify future checks
+            if not isinstance(self.only, list):
+                self.only = [self.only]
+
+            # Check that self.only is a
+            # List[Union[discord.abc.User, discord.Role]]
+            if not all(
+                isinstance(x, (discord.abc.User, discord.role.Role))
+                for x in self.only
+            ):
+                raise TypeError(
+                    "only must be an one of: discord.User, discord.Role, "
+                    "List[Union[discord.User, discord.Role]]"
+                )
+
         # force contents and embeds to be equal lengths
         if contents is not None and embeds is not None:
             if len(contents) != len(embeds):
                 raise InvalidArgumentException(
-                    "contents and embeds must be the same length if both are specified"
+                    "contents and embeds must be the same length"
+                    " if both are specified"
                 )
         else:
             if contents is not None:
@@ -135,15 +161,31 @@ class Paginator:
 
     def button_check(self, ctx: ComponentContext) -> bool:
         """Return False if the message received isn't the proper message,
-        or if `self.only` is True and the user isn't the command author"""
+        or if user does not have permissions to interact with message"""
         if ctx.origin_message_id != self._message.id:
             return False
 
         if self.only is not None:
-            if ctx.author_id != self.only.id:
+            check = False
+
+            # Validate that user either:
+            # 1. Is one of the users passed into self.only
+            # 2. Has one of the roles passed into self.only
+            for user in filter(
+                lambda x: isinstance(x, discord.abc.User), self.only
+            ):
+                check = check or user.id == ctx.author_id
+            for role in filter(
+                lambda x: isinstance(x, discord.role.Role), self.only
+            ):
+                check = check or role in ctx.author.roles
+                check = any(x in ctx.author.roles for x in self.only)
+
+            if not check:
                 asyncio.get_running_loop().create_task(
                     ctx.send(
-                        f"{ctx.author.mention}, you're not the author!",
+                        f"{ctx.author.mention}, you do not have permissions "
+                        + "for this interaction!",
                         hidden=True,
                     )
                 )
