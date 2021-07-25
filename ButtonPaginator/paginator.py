@@ -159,6 +159,12 @@ class Paginator:
                 "Can't use <discord_component.ButtonStyle.URL> type for button style."
             )
 
+        if disable_after_timeout and delete_after_timeout:
+            raise InvalidArgumentException(
+                "Both disable_after_timeout and delete_after_timeout are enabled. "
+                "Only one of these can be active at a time"
+            )
+
     def button_check(self, ctx: ComponentContext) -> bool:
         """Return False if the message received isn't the proper message,
         or if user does not have permissions to interact with message"""
