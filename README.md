@@ -1,45 +1,49 @@
 <div align="center">
     <div>
         <h1>Button Paginator</h1>
-        <span> <a href="https://pypi.org/project/discord-components"><img src="https://raw.githubusercontent.com/kiki7000/discord.py-components/master/.github/logo.png" alt="discord-components logo" height="10" style="border-radius: 50%"></a>With discord-components</span>
+        <span> <a href="https://pypi.org/project/discord-py-slash-command/"><img src="https://github.com/discord-py-slash-commands/discord-py-interactions/blob/master/.github/discordpyslashlogo.png" alt="discord-py-slash-command logo" height="10" style="border-radius: 50%"></a>
+        With discord-py-slash-command</span>
     </div>
     <div>
     </div>
     <div>
-        <h3>Button paginator using discord_components</h3>
+        <h3>Button paginator using discord_slash</h3>
     </div>
 </div>
 
 ## Welcome!
-It's a paginator for discord-componets! Thanks to the original creator khk4912 (khk4912 /EZPaginator)!
+It's a paginator for discord-py-slash-command! 
+Thanks to the original creators khk4912 (khk4912 /EZPaginator) and decave27 (decave27/ButtonPaginator)!
 
-This project is open source ⭐.
+This project is open source ⭐, feel free to take inspiration from the code
 
-[official discord server](https://discord.gg/pKM6stqPxS), so if you have a question, feel free to ask it on this server.
+The library being used has an [official discord server](https://discord.gg/KkgMBVuEkx), so if you have a question about how it works, feel free to ask it on this server.
 ## Install
 ```
-pip install --upgrade ButtonPaginator
+pip install --upgrade git+https://github.com/Catalyst4222/ButtonPaginator
 ```
 
 ## Example
 ```py
 from ButtonPaginator import Paginator
-from discord.ext.commands import Bot
-from discord_components import DiscordComponents
+from discord.ext import commands
+from discord_slash import SlashCommand
 import discord
 
-bot = Bot("your prefix")
+bot = commands.Bot("your prefix")
+slash = SlashCommand(bot)
 
 @bot.event
 async def on_ready():
-    DiscordComponents(bot)
     print(f"Logged in as {bot.user}!")
 
 @bot.command()
 async def button(ctx):
-    embeds = [discord.Embed(title="1 page"), discord.Embed(title="2 page"), discord.Embed(title="3 page"), discord.Embed(title="4 page"), discord.Embed(title="5 page")]
+    embeds = [discord.Embed(title="Page1"), discord.Embed(title="Page3"), discord.Embed(title="Page3")]
+    content = ["Text 1", "Text2", "Text3"]
     e = Paginator(bot=bot,
                   ctx=ctx,
+                  header="An example paginator",
                   embeds=embeds,
                   only=ctx.author)
     await e.start()
@@ -60,4 +64,5 @@ But you have to follow these to PR.
 
 ## Thanks to
 + [khk4912](https://github.com/khk4912/EZPaginator) - Original Paginator developer
-+ [kiki7000](https://github.com/kiki7000/discord.py-components) - componets lib developer
++ [decave27](https://github.com/decave27/ButtonPaginator) - Creator of the discord-components paginator that this was based on
++ LordOfPolls, fl0w, eunwoo, and everyone else who works on the [discord-py-slash-command lib](https://github.com/discord-py-slash-commands/discord-py-interactions)
