@@ -31,6 +31,7 @@ class Paginator:
         ctx: Union[commands.Context, discord_slash.SlashContext],
         contents: Optional[List[str]] = None,
         embeds: Optional[List[discord.Embed]] = None,
+        extras: Union[dict, List[dict]] = None,
         start_page: int = 1,
         header: str = "",
         use_extend: bool = False,
@@ -56,6 +57,7 @@ class Paginator:
         :param ctx: The context used to invoke the command
         :param contents: The list of messages to go on each page
         :param embeds: The list of embeds to go on each page
+        :param extras: A dict or list of dicts with kwargs to pass into send and edit
         :param start_page: The page for the paginator to start on
         :param header: A message to display at the top of each page
         :param use_extend: Whether to add buttons to go to the first and last page
@@ -72,6 +74,7 @@ class Paginator:
         self.context = ctx
         self.contents = contents
         self.embeds = embeds
+        self.extras = extras or {}
         self.page = start_page
         self.header = header
         self.use_extend = use_extend
@@ -125,18 +128,19 @@ class Paginator:
                     "List[Union[discord.User, discord.Role]]"
                 )
 
-        # force contents and embeds to be equal lengths
-        if contents is not None and embeds is not None:
-            if len(contents) != len(embeds):
-                raise InvalidArgumentException(
-                    "contents and embeds must be the same length"
-                    " if both are specified"
-                )
-        else:
-            if contents is not None:
-                self.embeds = [None] * len(contents)
-            elif embeds is not None:
-                self.contents = [""] * len(embeds)
+        # force contents, embeds, and extras to be equal lengths
+        if contents is not None:
+            self.embeds = [None] * len(contents)
+        if embeds is not None:
+            self.contents = [""] * len(embeds)
+        if extras is None or isinstance(extras, dict):
+            self.extras = [extras] * len(self.contents)
+
+        lists = [self.contents, self.embeds, self.extras]
+        if len(set(map(len, lists))) != 1:
+            raise InvalidArgumentException(
+                "Lists passed to embeds, contents, and extras must be the same size"
+            )
 
         if not isinstance(timeout, int):
             raise TypeError("timeout must be int.")
@@ -206,6 +210,7 @@ class Paginator:
             or None,
             embed=self.embeds[self.page - 1],
             components=(await self._make_buttons()),
+            **self.extras[self.page - 1]
         )
         while True:
             try:
@@ -232,6 +237,7 @@ class Paginator:
                     or None,
                     embed=self.embeds[self.page - 1],
                     components=(await self._make_buttons()),
+                    **self.extras[self.page - 1]
                 )
 
             except asyncio.TimeoutError:
