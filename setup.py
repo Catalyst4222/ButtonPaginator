@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from ButtonPaginator import __version__
 
 setup(
-    name="ButtonPaginator",
+    name="dpy-slash-button-paginator",
     license="MIT",
     version=__version__,
     description="Button paginator using discord_slash",
