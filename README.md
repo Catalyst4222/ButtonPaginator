@@ -40,11 +40,12 @@ async def on_ready():
 @bot.command()
 async def button(ctx):
     embeds = [discord.Embed(title="Page1"), discord.Embed(title="Page3"), discord.Embed(title="Page3")]
-    content = ["Text 1", "Text2", "Text3"]
+    contents = ["Text 1", "Text2", "Text3"]
     e = Paginator(bot=bot,
                   ctx=ctx,
                   header="An example paginator",
                   embeds=embeds,
+                  contents=contents,
                   only=ctx.author)
     await e.start()
 
