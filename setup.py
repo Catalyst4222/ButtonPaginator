@@ -1,11 +1,16 @@
 from setuptools import setup, find_packages
 from ButtonPaginator import __version__
 
+with open("README.md", "r", encoding="utf-8") as rdme:
+    long_description = rdme.read()
+
 setup(
     name="dpy-slash-button-paginator",
     license="MIT",
     version=__version__,
-    description="Button paginator using discord_slash",
+    description="Unofficial button paginator using discord_slash",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="catalyst4222",
     author_email="catalyst4222@gmail.com",
     url="https://github.com/catalyst4222/ButtonPaginator",
