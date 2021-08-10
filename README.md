@@ -20,7 +20,7 @@ This project is open source ⭐, feel free to take inspiration from the code
 The library being used has an [official discord server](https://discord.gg/KkgMBVuEkx), so if you have a question about how it works, feel free to ask it on this server.
 ## Install
 ```
-pip install --upgrade git+https://github.com/Catalyst4222/ButtonPaginator
+pip install --upgrade dpy-slash-button-paginator
 ```
 
 ## Example
